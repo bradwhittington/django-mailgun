@@ -59,7 +59,8 @@ class MailgunBackend(BaseEmailBackend):
                          },
                      files={
                             "message": StringIO(email_message.message().as_string()),
-                         }
+                         },
+                     verify=False
                      )
         except:
             if not self.fail_silently:
