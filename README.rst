@@ -24,6 +24,10 @@ Add the following to your settings.py::
     MAILGUN_ACCESS_KEY = 'ACCESS-KEY'
     MAILGUN_SERVER_NAME = 'SERVER-NAME'
 
+Additionally, you can specify max connection time in seconds to avoid blocking of process::
+
+    MAILGUN_TIMEOUT = 200
+
 Now, when you use ``django.core.mail.send_mail``, Mailgun will send the messages
 
 .. _Builtin Email Error Reporting: http://docs.djangoproject.com/en/1.2/howto/error-reporting/

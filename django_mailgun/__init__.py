@@ -39,6 +39,8 @@ class MailgunBackend(BaseEmailBackend):
             else:
                 raise
 
+        self._connection_timeout = getattr(settings, "MAILGUN_TIMEOUT")
+
         self._api_url = \
             "https://api.mailgun.net/v2/{0}/".format(self._server_name)
 
@@ -71,7 +73,8 @@ class MailgunBackend(BaseEmailBackend):
                 },
                 files={
                     "message": StringIO(email_message.message().as_string()),
-                }
+                },
+                timeout=self._connection_timeout
             )
         except:
             if not self.fail_silently:
