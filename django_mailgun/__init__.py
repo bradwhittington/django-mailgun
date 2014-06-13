@@ -1,8 +1,3 @@
-import requests
-from django.conf import settings
-from django.core.mail.backends.base import BaseEmailBackend
-from django.core.mail.message import sanitize_address
-
 try:
     from io import StringIO
 except ImportError:
@@ -11,8 +6,16 @@ except ImportError:
     except ImportError:
         from StringIO import StringIO
 
+import requests
+
+from django.conf import settings
+from django.core.mail.backends.base import BaseEmailBackend
+from django.core.mail.message import sanitize_address
+
+
 class MailgunAPIError(Exception):
     pass
+
 
 class MailgunBackend(BaseEmailBackend):
     """A Django Email backend that uses mailgun.
@@ -21,21 +24,25 @@ class MailgunBackend(BaseEmailBackend):
     def __init__(self, fail_silently=False, *args, **kwargs):
         access_key, server_name = (kwargs.pop('access_key', None),
                                    kwargs.pop('server_name', None))
-    
-        super(MailgunBackend, self).__init__(
-                        fail_silently=fail_silently, 
-                        *args, **kwargs)
+
+        super(MailgunBackend, self).__init__(fail_silently=fail_silently,
+                                             *args, **kwargs)
 
         try:
-            self._access_key = access_key or getattr(settings, 'MAILGUN_ACCESS_KEY')
-            self._server_name = server_name or getattr(settings, 'MAILGUN_SERVER_NAME')
+            self._access_key = access_key or getattr(settings,
+                                                     'MAILGUN_ACCESS_KEY')
+            self._server_name = server_name or getattr(settings,
+                                                       'MAILGUN_SERVER_NAME')
         except AttributeError:
             if fail_silently:
                 self._access_key, self._server_name = None, None
             else:
                 raise
 
-        self._api_url = "https://api.mailgun.net/v2/%s/" % self._server_name
+        self._connection_timeout = getattr(settings, "MAILGUN_TIMEOUT")
+
+        self._api_url = \
+            "https://api.mailgun.net/v2/{0}/".format(self._server_name)
 
     def open(self):
         """Stub for open connection, all sends are done over HTTP POSTs
@@ -51,30 +58,32 @@ class MailgunBackend(BaseEmailBackend):
         """A helper method that does the actual sending."""
         if not email_message.recipients():
             return False
-        from_email = sanitize_address(email_message.from_email, email_message.encoding)
+        from_email = sanitize_address(email_message.from_email,
+                                      email_message.encoding)
         recipients = [sanitize_address(addr, email_message.encoding)
                       for addr in email_message.recipients()]
 
         try:
-            r = requests.\
-                post(self._api_url + "messages.mime",
-                     auth=("api", self._access_key),
-                     data={
-                            "to": ", ".join(recipients),
-                            "from": from_email,
-                         },
-                     files={
-                            "message": StringIO(email_message.message().as_string()),
-                         }
-                     )
+            response = requests.post(
+                self._api_url + "messages.mime",
+                auth=("api", self._access_key),
+                data={
+                    "to": ", ".join(recipients),
+                    "from": from_email,
+                },
+                files={
+                    "message": StringIO(email_message.message().as_string()),
+                },
+                timeout=self._connection_timeout
+            )
         except:
             if not self.fail_silently:
                 raise
             return False
 
-        if r.status_code != 200:
+        if response.status_code != 200:
             if not self.fail_silently:
-                raise MailgunAPIError(r)
+                raise MailgunAPIError(response)
             return False
 
         return True
