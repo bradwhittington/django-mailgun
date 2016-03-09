@@ -29,7 +29,7 @@ HEADERS_MAP = {
     'X-Mailgun-Track': ('o:tracking', lambda x: x),
     'X-Mailgun-Track-Clicks': ('o:tracking-clicks', lambda x: x),
     'X-Mailgun-Track-Opens': ('o:tracking-opens', lambda x: x),
-    'X-Mailgun-Variables': ('v:my-var', lambda x: x),
+    'X-Mailgun-Variables': lambda (v,k): (('v:%s' % v), k),
 }
 
 
@@ -88,6 +88,9 @@ class MailgunBackend(BaseEmailBackend):
                     # map each value in the tuple/list
                     for data in data_to_transform:
                         api_data.append((api_transformer[0], api_transformer[1](data)))
+                elif type(data_to_transform) == dict:
+                    for data in data_to_transform.iteritems():
+                        api_data.append(api_transformer(data))
                 else:
                     # we only have one value
                     api_data.append((api_transformer[0], api_transformer[1](data_to_transform)))
