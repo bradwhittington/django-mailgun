@@ -84,11 +84,11 @@ class MailgunBackend(BaseEmailBackend):
         for smtp_key, api_transformer in six.iteritems(self._headers_map):
             data_to_transform = email_message.extra_headers.pop(smtp_key, None)
             if data_to_transform is not None:
-                if type(data_to_transform) in (list, tuple):
+                if isinstance(data_to_transform, (list, tuple)):
                     # map each value in the tuple/list
                     for data in data_to_transform:
                         api_data.append((api_transformer[0], api_transformer[1](data)))
-                elif type(data_to_transform) == dict:
+                elif isinstance(data_to_transform, dict):
                     for data in data_to_transform.iteritems():
                         api_data.append(api_transformer(data))
                 else:
