@@ -8,7 +8,7 @@ from django.core.mail.message import sanitize_address
 from django.utils.encoding import force_text
 from email.mime.base import MIMEBase
 from email.mime.message import MIMEMessage
-
+import warnings
 from requests.packages.urllib3.filepost import encode_multipart_formdata
 
 __version__ = '0.8.0'
@@ -136,15 +136,18 @@ class MailgunBackend(BaseEmailBackend):
 
             if email_message.attachments:
                 for attachment in email_message.attachments:
-                    if isinstance(attachment, (tuple, list)):
-                        post_data.append(('attachment', (attachment[0], attachment[1])))
-                    elif isinstance(attachment, MIMEBase):
+                    if isinstance(attachment, MIMEBase):
                         if "Content-ID" in attachment:
                             post_data.append(('inline', (attachment["Content-ID"][1:-1], attachment.get_payload(decode=True))))
                         elif isinstance(attachment, MIMEMessage):
                             post_data.append(("message", (attachment.get_filename(), attachment.get_payload(decode=True))))
                         else:
                             post_data.append(('attachment', (attachment.get_filename(), attachment.get_payload(decode=True))))
+                    else:
+                        try:
+                            post_data.append(('attachment', (attachment[0], attachment[1])))
+                        except KeyError:
+                            warnings.warn("unknown attachment: {!r}".format(attachment))
                 content, header = encode_multipart_formdata(post_data)
                 headers = {'Content-Type': header}
             else:
