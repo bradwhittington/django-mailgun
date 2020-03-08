@@ -75,7 +75,7 @@ Attaching data to messages
 
 When sending, you can attach data to your messages by passing custom data to X-Mailgun-Variables header
 (see https://documentation.mailgun.com/user_manual.html#attaching-data-to-messages).
-Data should be formatted as JSON, and it will be included in any webhook event releated to the email
+Data should be formatted as JSON, and it will be included in any webhook event related to the email
 containing the custom data. For example::
 
     email = EmailMessage('Hi!', 'Cool message for Joe', 'admin@example.com', [joe@example.com])
